@@ -1,5 +1,4 @@
 ---
----
 title: "Public health spending, life expectancy and moral hazard"
 subtitle: "Project phase 2: data description"
 author: "Elia Montecattini et Maya Goltman"
@@ -11,7 +10,8 @@ format: html
 library(knitr)
 library(dplyr)
 library(vroom)
-
+library(here)
+library(tidyr)
 ```
 
 # Research question
@@ -20,14 +20,14 @@ library(vroom)
 
 In most developed countries, health care is largely financed through public spending or collective insurance. The expected effect is positive: when access to care no longer depends on income, prevention, screening and treatment improve, and life expectancy rises. By contrast, countries where out-of-pocket spending (the share paid directly by the patient) is high experience more forgone care and greater health inequalities. A first part of our work is therefore to check whether a lower out-of-pocket share is associated with a higher life expectancy.
 
-Moral hazard is a key concept in health economics : it is defined as the phenomenon where individuals, when **insured against health care costs**, may engage in *riskier behavior* (ex-ante moral hazard) or *overconsume* health care resources (ex-post moral hazard) because they do not bear the full financial responsibility for those costs. This can lead to market inefficiency and an overallocation of health care services.
+Moral hazard is a key concept in health economics : it is defined as the phenomenon where individuals, when **insured against health care costs**, may engage in **riskier behavior** (*ex-ante* moral hazard) or **overconsume** health care resources (*ex-post* moral hazard) because they do not bear the full financial responsibility for those costs. This can lead to market inefficiency and an overallocation of health care services.
 
 In this project, we’ll try to assess whether the concept of ex-ante moral hazard is a real and measurable phenomenon, or rather a theoretical risk whose magnitude remains limited compared with the benefits of a well-funded health system. */! if the project is not long enough, we’ll try to assess the concept of ex-post moral hazard as well.*
 
 We can state two working hypotheses:
 
--   **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
--   **H2.** A lower out-of-pocket share is associated with higher alcohol consumption and tobacco use (moral hazard), but the effect is small compared with the gain in life expectancy.
+- **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
+- **H2.** A lower out-of-pocket share is associated with higher alcohol consumption and tobacco use (moral hazard), but the effect is small compared with the gain in life expectancy.
 
 Methodologically, we will carry out a longitudinal study. Since the studies are conducted at the country level and there are not enough countries in the world to reach 1000 units, we use data by year: each observation is a country in a given year. This gives a panel of several thousand observations and allows us to follow the same country over time, for instance with country fixed effects, to compare a country with itself rather than with very different countries.
 
@@ -43,9 +43,9 @@ The whole project (R project, raw data, Quarto source) is available on GitHub:
 
 ## Links and how to reproduce the data selection
 
-MOST ?? files are downloaded from the World Bank Open Data portal. The World Bank only redistributes the health and behaviour indicators, which are produced by the WHO. To reproduce the selection (downlaod as csv files):
+MOST files are downloaded from the World Bank Open Data portal. The World Bank only redistributes the health and behaviour indicators, which are produced by the WHO. To reproduce the selection (downlaod as csv files):
 
-| Variable | Producer | Indicator page | Local file |
+| DATA | Producer | Indicator page | Local file |
 |------------------|------------------|------------------|------------------|
 | Out-of-pocket health expenditure (% of current health expenditure) | WHO GHED, via World Bank | <https://data.worldbank.org/indicator/SH.XPD.OOPC.CH.ZS?downloadformat=csv> | `data/out_of_pocket` |
 | Alcohol consumption per capita (litres of pure alcohol, 15+) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.ALC.PCAP.LI?downloadformat=csv> | `data/alcohol` |
@@ -53,180 +53,138 @@ MOST ?? files are downloaded from the World Bank Open Data portal. The World Ban
 | GDP per capita, PPP (constant international \$) | World Bank (ICP / WDI) | <https://data.worldbank.org/indicator/NY.GDP.PCAP.PP.KD?downloadformat=csv> | `data/gdp_ppp` |
 | Life expectancy at birth, total (years) | World Bank (WDI) | <https://data.worldbank.org/indicator/SP.DYN.LE00.IN?downloadformat=csv> | `data/life_expectancy` |
 | Mortality caused by road traffic injury (per 100.000 person) | World Health Organization (WHO) | <https://api.worldbank.org/v2/en/indicator/SH.STA.TRAF.P5?downloadformat=csv> | `data/mortality_car.csv` |
-| Educational attainment, at least Bachelor's or equivalent, population 25+, total (%) | UNESCO | <> | `data/.csv` |
+| Educational attainment, at least Bachelor's or equivalent, population 25+, total (%) | UNESCO | \<\> | `data/.csv` |
 
+## Short description of the sources and cleaning
 
-## Short description of the sources
-
-Our data come mainly from datasets of the World Health Organization (WHO) that are redistributed by the World Bank.
-
-**Out-of-pocket expenditure.**
-
-The concept : "Out-of-pocket" payments are the health expenditures paid directly by households at the time they receive care. The WHO presents this share as a key indicator of financial protection: the higher it is, the less the population is protected against the cost of care. This is our main explanatory variable.
-
-The share of out-of-pocket spending in current health expenditure comes from the WHO Global Health Expenditure Database (GHED), updated on 12 December 2025. It is built on the System of Health Accounts (SHA 2011) framework.
-
-**Alcohol**
-
-Alcohol consumption per capita comes from the WHO Global Health Observatory (GHO). It is the sum of the recorded consumption (three-year average) and an estimate of the unrecorded consumption, for people aged 15 and over, in litres of pure alcohol. The World Bank redistributes it under the code SH.ALC.PCAP.LI.
-
-**Tobacco**
-
-The tobacco indicator (SH.PRV.SMOK) also comes from the WHO GHO and is published under a CC BY 4.0 licence. The WHO estimates cover 2000 to 2024 with projections up to 2030. Projections are not observations, so we cut the series and keep the years up to 2024.
-
-Alcohol and tobacco are used as proxies of risky behaviours, which is the way we define moral hazard (behaviours adopted *before* illness occurs). This is a limitation: they are national averages and they only capture part of risky behaviours.
-
-**GDP per capita.** It is measured in purchasing power parity, in constant international dollars, and comes from the International Comparison Program database through the World Development Indicators (WDI). The base year of prices changes between WDI versions (2011, 2017 or 2021), so all the files must come from the same download session. GDP is a control variable, because income influences both access to care and behaviours.
-
-**Life expectancy.** The WDI indicator "Life expectancy at birth, total (years)" is our main target variable, as an overall measure of the health of a population.
-
-# Loading the raw files
-
-The World Bank CSV files have 4 lines of metadata before the header, and one column per year (wide format).
+Our data come mainly from datasets of the World Health Organization (WHO) that are redistributed by the World Bank. The point of this part is mainly to make the dataset proper to a longitudinal analysis.
 
 ```{r}
-#| label: load-raw
-files <- tribble(
-  ~id,             ~file,                        ~label,
-  "out_of_pocket", "data/out_of_pocket.csv",     "Out-of-pocket expenditure",
-  "alcohol",       "data/alcohol.csv",           "Alcohol consumption",
-  "tobacco",       "data/tobacco.csv",           "Tobacco use",
-  "gdp",           "data/gdp.csv",               "GDP per capita (PPP)",
-  "life_exp",      "data/life_expectancy.csv",   "Life expectancy at birth"
-)
+#|include: false
 
-raw <- files$file |>
-  map(\(f) read_csv(f, skip = 4, show_col_types = FALSE)) |>
-  set_names(files$id)
+#usually, Word bank files contains 4 lines that are useless.
+# we can check it the following way 
+
+readLines("Data/alcohol/API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878.csv", n = 6)
+readLines("Data/health_expenditure/API_SH.XPD.CHEX.GD.ZS_DS2_en_csv_v2_73563.csv", n = 6)
+readLines("Data/gdp_ppp/API_NY.GDP.PCAP.PP.KD_DS2_en_csv_v2_1629.csv", n = 6)
+readLines("Data/life_expectancy/API_SP.DYN.LE00.IN_DS2_en_csv_v2_1528.csv", n = 6)
+readLines("Data/death_trafic_injury/API_SH.STA.TRAF.P5_DS2_en_csv_v2_72972.csv", n = 6)
 ```
 
-## One table per data file
-
-All the numbers below are computed from the files.
-
-```{r}
-#| label: file-tables
-#| results: asis
-for (i in seq_len(nrow(files))) {
-  df <- raw[[i]]
-  year_cols <- grep("^[0-9]{4}$", names(df), value = TRUE)
-  values <- as.matrix(df[year_cols])
-  info <- tibble(
-    Item = c("File", "Number of rows (countries and aggregates)",
-             "Number of columns", "Number of year columns",
-             "First year", "Last year",
-             "Share of missing values in year columns"),
-    Value = c(files$file[i], nrow(df), ncol(df), length(year_cols),
-              min(year_cols), max(year_cols),
-              sprintf("%.1f %%", 100 * mean(is.na(values))))
-  )
-  cat("\n\n**", files$label[i], "**\n\n", sep = "")
-  print(kable(info, align = c("l", "r")))
-  cat("\n\n")
-}
-```
-
-## Most important variables
+## Most important variables /!!!!!!\\ à reprendre faut faire plus long
 
 | Variable | Description |
 |------------------------------------|------------------------------------|
-| `country`, `iso3` | Name and ISO 3166 alpha-3 code of the country. They identify the statistical unit and are the first key used to join the files. |
-| `year` | Calendar year of the observation. With `iso3`, it forms the key of our country-year panel. |
+| `country`, `iso3` | unique identification code of the country. They are the first key used to join the files. |
+| `year` | Calendar year of the observation. |
 | `life_exp` | Life expectancy at birth in years. |
 | `oop_share` | Out-of-pocket expenditure as a percentage of current health expenditure. High values mean a weak financial protection. Main explanatory variable. |
 | `alcohol` | Alcohol consumption per capita (litres of pure alcohol, population 15+, recorded and unrecorded). Proxy of risky behaviour. |
 | `tobacco` | Prevalence of tobacco smoking. Proxy of risky behaviour. |
 | `gdp_pc` | GDP per capita in PPP, constant international dollars. Control variable for the level of wealth. |
 
-# Joining and cleaning
+### World Bank files (WDI)
 
-We applied the following steps:
+Five of our files come from the World Development Indicators (WDI) database of the World Bank. Each indicator was downloaded as a CSV from the World Bank Data website. The files for alcohol, GDP and life expectancy were last updated on 2026-10-08, the files for health expenditure and road mortality on 2026-11-11.
 
-1.  **Reshaping.** Each file is converted from wide format (one column per year) to long format (one row per country and year).
-2.  **Period.** We keep the years 2000 to 2024. This removes the years without data and excludes the WHO projections for tobacco (2025 to 2030). NOT SURE FOR NOW
-3.  **Joining.** The five tables are joined by country code and year with a full join, so that no observation is lost at this stage.
-4.  **Aggregates.** The World Bank files contain regions and income groups (World, Euro area, etc.). They are not countries, so they are removed by keeping only the codes recognised as countries by the `countrycode` package.
-5.  **Missing values.** We count them for each variable. The analysis sample keeps only the country-years where the variables are all observed.
+- **Alcohol consumption** (`SH.ALC.PCAP.LI`): total alcohol consumption per capita, in litres of pure alcohol, for people aged 15 and over. These are *projected estimates* produced by the WHO, not direct national measurements.
+- **Current health expenditure** (`SH.XPD.CHEX.GD.ZS`): total health spending as a percentage of GDP, from the WHO Global Health Expenditure Database.
+- **GDP per capita** (`NY.GDP.PCAP.PP.KD`): GDP per capita at purchasing power parity, in constant 2021 international dollars.
+- **Life expectancy** (`SP.DYN.LE00.IN`): life expectancy at birth, total, in years.
+- **Road traffic mortality** (`SH.STA.TRAF.P5`): deaths caused by road traffic injury, per 100,000 population.
+
+### Cleaning steps for the World Bank files
+
+All five files have the same structure, so one function cleans them all:
+
+1.  The first 4 lines are a presentation header (source, update date), so we skip them.
+2.  Each line ends with an extra comma, which creates an empty unnamed column. We drop it.
+3.  The files are in *wide* format (one column per year, 1960 to 2025). We reshape them to *long* format (one row per country and year).
+4.  Years without a value are removed, since many indicators only cover part of the period.
+5.  The files mix countries and aggregates (World, Euro area, income groups...). We keep only real countries, using the country metadata file: aggregates have no `Region`.
 
 ```{r}
-#| label: clean-join
-to_long <- function(df, name) {
-  df |>
+#| label: wb-cleaning
+
+# country metadata: aggregates have an empty Region
+meta_file <- list.files(here("Data", "alcohol"),
+                        pattern = "^Metadata_Country", full.names = TRUE)
+countries <- vroom(meta_file, show_col_types = FALSE) |>
+  filter(!is.na(Region)) |>
+  select(iso3 = `Country Code`, region = Region, income_group = IncomeGroup)
+
+# to go faster, Claude created a function read_wb that takes ... for argument & uses tidyr for cleaning the world bank databases 
+read_wb <- function(path, value_name) {
+  vroom(path, skip = 4, show_col_types = FALSE) |>
+    select(-starts_with("...")) |>
+    pivot_longer(
+      cols = matches("^[0-9]{4}$"),
+      names_to = "year",
+      values_to = value_name,
+      names_transform = as.integer,
+      values_transform = as.numeric,
+      values_drop_na = TRUE
+    ) |>
+    semi_join(countries, by = c("Country Code" = "iso3")) |>
     select(country = `Country Name`, iso3 = `Country Code`,
-           matches("^[0-9]{4}$")) |>
-    pivot_longer(-c(country, iso3), names_to = "year", values_to = name) |>
-    mutate(year = as.integer(year)) |>
-    filter(year >= 2000, year <= 2024)
+           year, all_of(value_name))
 }
 
-panel_all <- list(
-  to_long(raw$out_of_pocket, "oop_share"),
-  to_long(raw$alcohol,       "alcohol"),
-  to_long(raw$tobacco,       "tobacco"),
-  to_long(raw$gdp,           "gdp_pc"),
-  to_long(raw$life_exp,      "life_exp")
-) |>
-  reduce(full_join, by = c("country", "iso3", "year"))
-
-panel <- panel_all |>
-  filter(!is.na(countrycode(iso3, "iso3c", "country.name", warn = FALSE)))
-
-panel_complete <- panel |> drop_na()
+alcohol <- read_wb(
+  here("Data", "alcohol", "API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878.csv"),
+  "alcohol_litres")
+health_exp <- read_wb(
+  here("Data", "health_expenditure", "API_SH.XPD.CHEX.GD.ZS_DS2_en_csv_v2_73563.csv"),
+  "health_exp_gdp")
+out_pocket <- read_wb(
+  here("Data", "out_of_pocket", "API_SH.XPD.OOPC.CH.ZS_DS2_en_csv_v2_62345.csv"),
+  "health_exp_gdp")
+gdp <- read_wb(
+  here("Data", "gdp_ppp", "API_NY.GDP.PCAP.PP.KD_DS2_en_csv_v2_1629.csv"),
+  "gdp_pc_ppp")
+life_exp <- read_wb(
+  here("Data", "life_expectancy", "API_SP.DYN.LE00.IN_DS2_en_csv_v2_1528.csv"),
+  "life_expectancy")
+road_deaths <- read_wb(
+  here("Data", "death_trafic_injury", "API_SH.STA.TRAF.P5_DS2_en_csv_v2_72972.csv"),
+  "road_deaths_100k")
+tobacco <- read_wb(
+  here("Data", "tobacco",
+       "API_SH.PRV.SMOK_DS2_en_csv_v2.csv"),
+  "tobacco"
+)
 ```
 
-After joining, the table has `r nrow(panel_all)` rows. Once the aggregates are removed, there are `r nrow(panel)` rows for `r n_distinct(panel$iso3)` countries. The complete sample, without any missing value, has `r nrow(panel_complete)` rows for `r n_distinct(panel_complete$iso3)` countries.
+After cleaning, here is what each indicator covers:
 
 ```{r}
-#| label: missing
-panel |>
-  summarise(across(c(oop_share, alcohol, tobacco, gdp_pc, life_exp),
-                   \(x) sprintf("%.1f %%", 100 * mean(is.na(x))))) |>
-  pivot_longer(everything(), names_to = "Variable",
-               values_to = "Share of missing values") |>
-  kable(align = c("l", "r"))
+#| label: wb-coverage
+list(alcohol = alcohol, health_exp = health_exp, gdp = gdp,
+     life_exp = life_exp, road_deaths = road_deaths) |>
+  imap(\(d, name) tibble(
+    indicator    = name,
+    countries    = n_distinct(d$iso3),
+    first_year   = min(d$year),
+    last_year    = max(d$year),
+    observations = nrow(d)
+  )) |>
+  list_rbind() |>
+  knitr::kable()
 ```
 
-# Target variable: life expectancy
 
-Life expectancy at birth is our target variable. The first graph shows its distribution over all the country-years, the second one its evolution over time.
+# Tables 
 
 ```{r}
-#| label: fig-target-dist
-#| fig-cap: "Distribution of life expectancy at birth (all countries and years)"
-panel |>
-  filter(!is.na(life_exp)) |>
-  ggplot(aes(x = life_exp)) +
-  geom_histogram(binwidth = 2, fill = "steelblue", colour = "white") +
-  labs(x = "Life expectancy at birth (years)", y = "Number of country-years") +
-  theme_minimal()
+data.frame(
+  Dataset = c("Alcohol", "GDP", "Life expectancy",
+              "Health expenditure", "Road mortality"),
+  Rows = c(nrow(alcohol), nrow(gdp), nrow(life_exp),
+           nrow(health_exp), nrow(road_deaths)),
+  Columns = c(ncol(alcohol), ncol(gdp), ncol(life_exp),
+              ncol(health_exp), ncol(road_deaths))
+) |> 
+  knitr::kable()
 ```
 
-```{r}
-#| label: fig-target-time
-#| fig-cap: "Evolution of life expectancy: median and interquartile range across countries"
-panel |>
-  filter(!is.na(life_exp)) |>
-  group_by(year) |>
-  summarise(median = median(life_exp),
-            q1 = quantile(life_exp, 0.25),
-            q3 = quantile(life_exp, 0.75)) |>
-  ggplot(aes(x = year)) +
-  geom_ribbon(aes(ymin = q1, ymax = q3), fill = "steelblue", alpha = 0.3) +
-  geom_line(aes(y = median), colour = "steelblue", linewidth = 1) +
-  labs(x = "Year", y = "Life expectancy at birth (years)") +
-  theme_minimal()
-```
-
-A first look at the relation with our main explanatory variable (the complete sample is used):
-
-```{r}
-#| label: fig-target-oop
-#| fig-cap: "Life expectancy and out-of-pocket share, all country-years with complete data"
-panel_complete |>
-  ggplot(aes(x = oop_share, y = life_exp)) +
-  geom_point(alpha = 0.3) +
-  geom_smooth(method = "loess", se = FALSE, colour = "firebrick") +
-  labs(x = "Out-of-pocket expenditure (% of current health expenditure)",
-       y = "Life expectancy at birth (years)") +
-  theme_minimal()
-```
