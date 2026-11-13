@@ -26,8 +26,8 @@ The difficulty is that health behaviours also depend on education, income, cultu
 
 The question is thus whether moral hazard is a real and measurable phenomenon, or rather a theoretical risk whose magnitude remains limited compared with the benefits of a well-funded health system. We can state two working hypotheses:
 
-- **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
-- **H2.** A lower out-of-pocket share is associated with higher alcohol consumption and tobacco use (moral hazard), but the effect is small compared with the gain in life expectancy.
+-   **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
+-   **H2.** A lower out-of-pocket share is associated with higher alcohol consumption and tobacco use (moral hazard), but the effect is small compared with the gain in life expectancy.
 
 Methodologically, we will carry out a longitudinal study. Since the studies are conducted at the country level and there are not enough countries in the world to reach 1000 units, we use data by year: each observation is a country in a given year. This gives a panel of several thousand observations and allows us to follow the same country over time, for instance with country fixed effects, to compare a country with itself rather than with very different countries.
 
