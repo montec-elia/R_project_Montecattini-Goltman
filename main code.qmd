@@ -26,8 +26,8 @@ In this project, we’ll try to assess whether the concept of ex-ante moral haza
 
 We can state two working hypotheses:
 
-- **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
-- **H2.** A lower out-of-pocket share is associated with higher alcohol consumption and tobacco use (moral hazard), but the effect is small compared with the gain in life expectancy.
+-   **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
+-   **H2.** A lower out-of-pocket share is associated with higher alcohol consumption and tobacco use (moral hazard), but the effect is small compared with the gain in life expectancy.
 
 Methodologically, we will carry out a longitudinal study. Since the studies are conducted at the country level and there are not enough countries in the world to reach 1000 units, we use data by year: each observation is a country in a given year. This gives a panel of several thousand observations and allows us to follow the same country over time, for instance with country fixed effects, to compare a country with itself rather than with very different countries.
 
@@ -46,15 +46,15 @@ The whole project (R project, raw data, Quarto source) is available on GitHub:
 MOST ?? files are downloaded from the World Bank Open Data portal. The World Bank only redistributes the health and behaviour indicators, which are produced by the WHO. To reproduce the selection (downlaod as csv files):
 
 | Variable | Producer | Indicator page | Local file |
-|----|----|----|----|
-| Out-of-pocket health expenditure (% of current health expenditure) | WHO GHED, via World Bank | <https://data.worldbank.org/indicator/SH.XPD.OOPC.CH.ZS?downloadformat=csv> | `data/out_of_pocket.csv` |
-| Alcohol consumption per capita (litres of pure alcohol, 15+) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.ALC.PCAP.LI?downloadformat=csv> | `data/alcohol.csv` |
+|------------------|------------------|------------------|------------------|
+| Out-of-pocket health expenditure (% of current health expenditure) | WHO GHED, via World Bank | <https://data.worldbank.org/indicator/SH.XPD.OOPC.CH.ZS?downloadformat=csv> | `data/out_of_pocket` |
+| Alcohol consumption per capita (litres of pure alcohol, 15+) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.ALC.PCAP.LI?downloadformat=csv> | `data/alcohol` |
 | Tobacco use (smoking prevalence) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.PRV.SMOK?downloadformat=csv> | `data/tobacco.csv` |
-| GDP per capita, PPP (constant international \$) | World Bank (ICP / WDI) | <https://data.worldbank.org/indicator/NY.GDP.PCAP.PP.KD?downloadformat=csv> | `data/gdp.csv` |
-| Life expectancy at birth, total (years) | World Bank (WDI) | <https://data.worldbank.org/indicator/SP.DYN.LE00.IN?downloadformat=csv> | `data/life_expectancy.csv` |
-| Mortality caused by road traffic injury (per 100.000 person) | World Health Organization (WHO) | <https://api.worldbank.org/v2/en/indicator/SH.STA.TRAF.P5?downloadformat=csv> | `Data/mortality by car accident` |
+| GDP per capita, PPP (constant international \$) | World Bank (ICP / WDI) | <https://data.worldbank.org/indicator/NY.GDP.PCAP.PP.KD?downloadformat=csv> | `data/gdp_ppp` |
+| Life expectancy at birth, total (years) | World Bank (WDI) | <https://data.worldbank.org/indicator/SP.DYN.LE00.IN?downloadformat=csv> | `data/life_expectancy` |
+| Mortality caused by road traffic injury (per 100.000 person) | World Health Organization (WHO) | <https://api.worldbank.org/v2/en/indicator/SH.STA.TRAF.P5?downloadformat=csv> | `data/mortality_car.csv` |
+| Educational attainment, at least Bachelor's or equivalent, population 25+, total (%) | UNESCO | <> | `data/.csv` |
 
-ET gov health expenditure as % of GDP
 
 ## Short description of the sources
 
@@ -129,7 +129,7 @@ for (i in seq_len(nrow(files))) {
 ## Most important variables
 
 | Variable | Description |
-|----|----|
+|------------------------------------|------------------------------------|
 | `country`, `iso3` | Name and ISO 3166 alpha-3 code of the country. They identify the statistical unit and are the first key used to join the files. |
 | `year` | Calendar year of the observation. With `iso3`, it forms the key of our country-year panel. |
 | `life_exp` | Life expectancy at birth in years. |
