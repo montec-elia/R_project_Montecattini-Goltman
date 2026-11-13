@@ -46,7 +46,7 @@ The whole project (R project, raw data, Quarto source) is available on GitHub:
 MOST ?? files are downloaded from the World Bank Open Data portal. The World Bank only redistributes the health and behaviour indicators, which are produced by the WHO. To reproduce the selection (downlaod as csv files):
 
 | Variable | Producer | Indicator page | Local file |
-|------------------|------------------|------------------|------------------|
+|----|----|----|----|
 | Out-of-pocket health expenditure (% of current health expenditure) | WHO GHED, via World Bank | <https://data.worldbank.org/indicator/SH.XPD.OOPC.CH.ZS?downloadformat=csv> | `data/out_of_pocket.csv` |
 | Alcohol consumption per capita (litres of pure alcohol, 15+) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.ALC.PCAP.LI?downloadformat=csv> | `data/alcohol.csv` |
 | Tobacco use (smoking prevalence) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.PRV.SMOK?downloadformat=csv> | `data/tobacco.csv` |
@@ -129,7 +129,7 @@ for (i in seq_len(nrow(files))) {
 ## Most important variables
 
 | Variable | Description |
-|------------------------------------|------------------------------------|
+|----|----|
 | `country`, `iso3` | Name and ISO 3166 alpha-3 code of the country. They identify the statistical unit and are the first key used to join the files. |
 | `year` | Calendar year of the observation. With `iso3`, it forms the key of our country-year panel. |
 | `life_exp` | Life expectancy at birth in years. |
