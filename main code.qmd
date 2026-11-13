@@ -20,18 +20,18 @@ library(vroom)
 
 In most developed countries, health care is largely financed through public spending or collective insurance. The expected effect is positive: when access to care no longer depends on income, prevention, screening and treatment improve, and life expectancy rises. By contrast, countries where out-of-pocket spending (the share paid directly by the patient) is high experience more forgone care and greater health inequalities. A first part of our work is therefore to check whether a lower out-of-pocket share is associated with a higher life expectancy.
 
-However, when people no longer bear the full cost of their choices, they may be tempted to behave more recklessly: smoking more, drinking, neglecting prevention. This is the classical argument of moral hazard. In our analysis, moral hazard refers only to risky behaviours adopted *before* illness occurs, which is different from the excess use of care once a person is ill. We use alcohol consumption and tobacco use as proxies of these behaviours. This choice has limits, since these two indicators do not cover all risky behaviours (diet, physical activity, prevention, screening), but they are available for many countries over a long period.
+Moral hazard is a key concept in health economics : it is defined as the phenomenon where individuals, when **insured against health care costs**, may engage in *riskier behavior* (ex-ante moral hazard) or *overconsume* health care resources (ex-post moral hazard) because they do not bear the full financial responsibility for those costs. This can lead to market inefficiency and an overallocation of health care services.
 
-The difficulty is that health behaviours also depend on education, income, culture, religion and public prevention policies (taxes on tobacco and alcohol, advertising bans, awareness campaigns). Isolating the specific effect of insurance coverage is therefore hard. A country with low out-of-pocket spending is often a rich country, with a high level of education and strong prevention policies, which can hide or reverse a possible moral hazard effect. This is why we include GDP per capita as a control, and why we plan to test additional variables such as education or road traffic deaths.
+In this project, we’ll try to assess whether the concept of ex-ante moral hazard is a real and measurable phenomenon, or rather a theoretical risk whose magnitude remains limited compared with the benefits of a well-funded health system. */! if the project is not long enough, we’ll try to assess the concept of ex-post moral hazard as well.*
 
-The question is thus whether moral hazard is a real and measurable phenomenon, or rather a theoretical risk whose magnitude remains limited compared with the benefits of a well-funded health system. We can state two working hypotheses:
+We can state two working hypotheses:
 
--   **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
--   **H2.** A lower out-of-pocket share is associated with higher alcohol consumption and tobacco use (moral hazard), but the effect is small compared with the gain in life expectancy.
+- **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
+- **H2.** A lower out-of-pocket share is associated with higher alcohol consumption and tobacco use (moral hazard), but the effect is small compared with the gain in life expectancy.
 
 Methodologically, we will carry out a longitudinal study. Since the studies are conducted at the country level and there are not enough countries in the world to reach 1000 units, we use data by year: each observation is a country in a given year. This gives a panel of several thousand observations and allows us to follow the same country over time, for instance with country fixed effects, to compare a country with itself rather than with very different countries.
 
-The main limitation of the project is that we only have national averages. A relation observed between countries does not necessarily hold for individuals (ecological fallacy), so we cannot draw firm conclusions about individual behaviours. Our results will describe associations and not proven causal effects.
+**LIMIT**The main limitation of the project is that we only have national averages. A relation observed between countries does not necessarily hold for individuals (ecological fallacy), so we cannot draw firm conclusions about individual behaviours. Our results will describe associations and not proven causal effects.
 
 # Project repository
 
