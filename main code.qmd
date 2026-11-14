@@ -22,7 +22,7 @@ In most developed countries, health care is largely financed through public spen
 
 Moral hazard is a key concept in health economics : it is defined as the phenomenon where individuals, when **insured against health care costs**, may engage in **riskier behavior** (*ex-ante* moral hazard) or **overconsume** health care resources (*ex-post* moral hazard) because they do not bear the full financial responsibility for those costs. This can lead to market inefficiency and an overallocation of health care services.
 
-In this project, we’ll try to assess whether the concept of ex-ante moral hazard is a real and measurable phenomenon, or rather a theoretical risk whose magnitude remains limited compared with the benefits of a well-funded health system. */! if the project is not long enough, we’ll try to assess the concept of ex-post moral hazard as well.*
+In this project, we’ll try to assess whether the concept of ex-ante moral hazard is a real and measurable phenomenon, or rather a theoretical risk whose magnitude remains limited compared with the benefits of a well-funded health system. */!if the project is not long enough, we’ll try to assess the concept of ex-post moral hazard as well.*
 
 We can state two working hypotheses:
 
@@ -88,10 +88,11 @@ readLines("Data/death_trafic_injury/API_SH.STA.TRAF.P5_DS2_en_csv_v2_72972.csv",
 
 Five of our files come from the World Development Indicators (WDI) database of the World Bank. Each indicator was downloaded as a CSV from the World Bank Data website. The files for alcohol, GDP and life expectancy were last updated on 2026-10-08, the files for health expenditure and road mortality on 2026-11-11.
 
-- **Alcohol consumption** (`SH.ALC.PCAP.LI`): total alcohol consumption per capita, in litres of pure alcohol, for people aged 15 and over. These are *projected estimates* produced by the WHO, not direct national measurements.
-- **Current health expenditure** (`SH.XPD.CHEX.GD.ZS`): total health spending as a percentage of GDP, from the WHO Global Health Expenditure Database.
-- **GDP per capita** (`NY.GDP.PCAP.PP.KD`): GDP per capita at purchasing power parity, in constant 2021 international dollars.
-- **Life expectancy** (`SP.DYN.LE00.IN`): life expectancy at birth, total, in years.
+- **Alcohol consumption** (`SH.ALC.PCAP.LI`): total alcohol consumption per capita, in litres of pure alcohol, for people aged 15 and over, adjusted of the tourist consumtion. These are **projected estimates** produced by the WHO, not direct national measurements.According to the file `Metadata_Country_API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878`, the world bank takes into account, when there are, the two exanges rates.
+- **Current Governmental health expenditure** (`SH.XPD.CHEX.GD.ZS`): total health spending as a percentage of GDP, from the WHO Global Health Expenditure Database.Estimates of current health expenditures include healthcare goods and services consumed during each year. This indicator **does not include capital** health expenditures such as buildings, machinery, IT and stocks of vaccines for emergency or outbreaks, according to the metadatas : 
+- **GDP per capita** (`NY.GDP.PCAP.PP.KD`): GDP per capita at **purchasing power parity**, in constant 2021 international dollars.
+- **Life expectancy** (`SP.DYN.LE00.IN`): life expectancy at birth, total, in years. It "indicates the number of years a newborn infant would live if prevailing patterns of mortality at the time of its birth were to stay the same throughout its life.", note: Derived from male and female life expectancy at birth from sources such as Eurostat: Demographic Statistics.,
+
 - **Road traffic mortality** (`SH.STA.TRAF.P5`): deaths caused by road traffic injury, per 100,000 population.
 
 ### Cleaning steps for the World Bank files
@@ -134,12 +135,12 @@ read_wb <- function(path, value_name) {
 alcohol <- read_wb(
   here("Data", "alcohol", "API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878.csv"),
   "alcohol_litres")
-health_exp <- read_wb(
+pub_health_exp <- read_wb(
   here("Data", "health_expenditure", "API_SH.XPD.CHEX.GD.ZS_DS2_en_csv_v2_73563.csv"),
   "health_exp_gdp")
 out_pocket <- read_wb(
   here("Data", "out_of_pocket", "API_SH.XPD.OOPC.CH.ZS_DS2_en_csv_v2_62345.csv"),
-  "health_exp_gdp")
+  "oop_share")
 gdp <- read_wb(
   here("Data", "gdp_ppp", "API_NY.GDP.PCAP.PP.KD_DS2_en_csv_v2_1629.csv"),
   "gdp_pc_ppp")
@@ -186,5 +187,50 @@ data.frame(
               ncol(health_exp), ncol(road_deaths))
 ) |> 
   knitr::kable()
+```
+
+# PLOT OF THE MAIN VARIABLE 
+
+
+```{r}
+library(ggplot2)
+
+life_exp |>
+  group_by(year) |>
+  summarise(
+    mean_life_exp = mean(
+      life_expectancy,
+      na.rm = TRUE
+    )
+  ) |>
+  ggplot(aes(x = year, y = mean_life_exp)) +
+  geom_line() +
+  labs(
+    title = "Evolution of global life expectancy",
+    x = "Year",
+    y = "Life expectancy (years)"
+  ) 
+```
+
+More interesting : life expectancy according to out of pocket expenditure : 
+
+```{r}
+#need to join the two datasets first 
+
+panel <- life_exp |>
+  left_join(out_pocket, by = c("iso3", "year"))
+
+library(ggplot2)
+
+ggplot(panel, aes(x = oop_share, y = life_expectancy)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", se = TRUE, color = "red") +
+  labs(
+    title = "Life expectancy according to out-of-pocket expenditure",
+    subtitle = "Relationship between health expenditure and life expectancy",
+    x = "Out-of-pocket expenditure (% of current health expenditure)",
+    y = "Life expectancy at birth (years)"
+  ) +
+  theme_minimal()
 ```
 
