@@ -12,6 +12,8 @@ library(dplyr)
 library(vroom)
 library(here)
 library(tidyr)
+library(ggplot2)
+library(purrr)
 ```
 
 # Research question
@@ -26,8 +28,8 @@ In this project, we’ll try to assess whether the concept of ex-ante moral haza
 
 We can state two working hypotheses:
 
-- **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
-- **H2.** A lower out-of-pocket share is associated with higher alcohol consumption and tobacco use (moral hazard), but the effect is small compared with the gain in life expectancy.
+-   **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
+-   **H2.** A lower out-of-pocket share is associated with higher alcohol consumption and tobacco use (moral hazard), but the effect is small compared with the gain in life expectancy.
 
 Methodologically, we will carry out a longitudinal study. Since the studies are conducted at the country level and there are not enough countries in the world to reach 1000 units, we use data by year: each observation is a country in a given year. This gives a panel of several thousand observations and allows us to follow the same country over time, for instance with country fixed effects, to compare a country with itself rather than with very different countries.
 
@@ -49,11 +51,12 @@ MOST files are downloaded from the World Bank Open Data portal. The World Bank o
 |------------------|------------------|------------------|------------------|
 | Out-of-pocket health expenditure (% of current health expenditure) | WHO GHED, via World Bank | <https://data.worldbank.org/indicator/SH.XPD.OOPC.CH.ZS?downloadformat=csv> | `data/out_of_pocket` |
 | Alcohol consumption per capita (litres of pure alcohol, 15+) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.ALC.PCAP.LI?downloadformat=csv> | `data/alcohol` |
-| Tobacco use (smoking prevalence) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.PRV.SMOK?downloadformat=csv> | `data/tobacco.csv` |
+| Prevalence of current tobacco use (% adults) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.PRV.SMOK?downloadformat=csv> | `data/tobacco` |
 | GDP per capita, PPP (constant international \$) | World Bank (ICP / WDI) | <https://data.worldbank.org/indicator/NY.GDP.PCAP.PP.KD?downloadformat=csv> | `data/gdp_ppp` |
 | Life expectancy at birth, total (years) | World Bank (WDI) | <https://data.worldbank.org/indicator/SP.DYN.LE00.IN?downloadformat=csv> | `data/life_expectancy` |
 | Mortality caused by road traffic injury (per 100.000 person) | World Health Organization (WHO) | <https://api.worldbank.org/v2/en/indicator/SH.STA.TRAF.P5?downloadformat=csv> | `data/mortality_car.csv` |
-| Educational attainment, at least Bachelor's or equivalent, population 25+, total (%) | UNESCO | \<\> | `data/.csv` |
+| Educational attainment, at least Bachelor's or equivalent, population 25+, total (%) | UNESCO via World Bank | \<\> | `data/education` |
+| Current Health Expenditure (% GDP) | WHO via World Bank | \<\> | `data/health_expenditure` |
 
 ## Short description of the sources and cleaning
 
@@ -88,12 +91,15 @@ readLines("Data/death_trafic_injury/API_SH.STA.TRAF.P5_DS2_en_csv_v2_72972.csv",
 
 Five of our files come from the World Development Indicators (WDI) database of the World Bank. Each indicator was downloaded as a CSV from the World Bank Data website. The files for alcohol, GDP and life expectancy were last updated on 2026-10-08, the files for health expenditure and road mortality on 2026-11-11.
 
-- **Alcohol consumption** (`SH.ALC.PCAP.LI`): total alcohol consumption per capita, in litres of pure alcohol, for people aged 15 and over, adjusted of the tourist consumtion. These are **projected estimates** produced by the WHO, not direct national measurements.According to the file `Metadata_Country_API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878`, the world bank takes into account, when there are, the two exanges rates.
-- **Current Governmental health expenditure** (`SH.XPD.CHEX.GD.ZS`): total health spending as a percentage of GDP, from the WHO Global Health Expenditure Database.Estimates of current health expenditures include healthcare goods and services consumed during each year. This indicator **does not include capital** health expenditures such as buildings, machinery, IT and stocks of vaccines for emergency or outbreaks, according to the metadatas : 
-- **GDP per capita** (`NY.GDP.PCAP.PP.KD`): GDP per capita at **purchasing power parity**, in constant 2021 international dollars.
-- **Life expectancy** (`SP.DYN.LE00.IN`): life expectancy at birth, total, in years. It "indicates the number of years a newborn infant would live if prevailing patterns of mortality at the time of its birth were to stay the same throughout its life.", note: Derived from male and female life expectancy at birth from sources such as Eurostat: Demographic Statistics.,
+-   **Alcohol consumption** (`SH.ALC.PCAP.LI`): total alcohol consumption per capita, in litres of pure alcohol, for people aged 15 and over, adjusted of the tourist consumtion. These are **projected estimates** produced by the WHO, not direct national measurements.According to the file `Metadata_Country_API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878`, the world bank takes into account, when there are, the two exanges rates.
 
-- **Road traffic mortality** (`SH.STA.TRAF.P5`): deaths caused by road traffic injury, per 100,000 population.
+-   **Current Governmental health expenditure** (`SH.XPD.CHEX.GD.ZS`): total health spending as a percentage of GDP, from the WHO Global Health Expenditure Database.Estimates of current health expenditures include healthcare goods and services consumed during each year. This indicator **does not include capital** health expenditures such as buildings, machinery, IT and stocks of vaccines for emergency or outbreaks, according to the metadatas :
+
+-   **GDP per capita** (`NY.GDP.PCAP.PP.KD`): GDP per capita at **purchasing power parity**, in constant 2021 international dollars.
+
+-   **Life expectancy** (`SP.DYN.LE00.IN`): life expectancy at birth, total, in years. It "indicates the number of years a newborn infant would live if prevailing patterns of mortality at the time of its birth were to stay the same throughout its life.", note: Derived from male and female life expectancy at birth from sources such as Eurostat: Demographic Statistics.,
+
+-   **Road traffic mortality** (`SH.STA.TRAF.P5`): deaths caused by road traffic injury, per 100,000 population.
 
 ### Cleaning steps for the World Bank files
 
@@ -109,7 +115,7 @@ All five files have the same structure, so one function cleans them all:
 #| label: wb-cleaning
 
 # country metadata: aggregates have an empty Region
-meta_file <- list.files(here("Data", "alcohol"),
+meta_file <- list.files(here("data", "alcohol"),
                         pattern = "^Metadata_Country", full.names = TRUE)
 countries <- vroom(meta_file, show_col_types = FALSE) |>
   filter(!is.na(Region)) |>
@@ -133,30 +139,33 @@ read_wb <- function(path, value_name) {
 }
 
 alcohol <- read_wb(
-  here("Data", "alcohol", "API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878.csv"),
+  here("data", "alcohol", "API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878.csv"),
   "alcohol_litres")
-pub_health_exp <- read_wb(
-  here("Data", "health_expenditure", "API_SH.XPD.CHEX.GD.ZS_DS2_en_csv_v2_73563.csv"),
+health_exp <- read_wb(
+  here("data", "health_expenditure", "API_SH.XPD.CHEX.GD.ZS_DS2_en_csv_v2_73563.csv"),
   "health_exp_gdp")
 out_pocket <- read_wb(
-  here("Data", "out_of_pocket", "API_SH.XPD.OOPC.CH.ZS_DS2_en_csv_v2_62345.csv"),
+  here("data", "out_of_pocket", "API_SH.XPD.OOPC.CH.ZS_DS2_en_csv_v2_62345.csv"),
   "oop_share")
 gdp <- read_wb(
-  here("Data", "gdp_ppp", "API_NY.GDP.PCAP.PP.KD_DS2_en_csv_v2_1629.csv"),
+  here("data", "gdp_ppp", "API_NY.GDP.PCAP.PP.KD_DS2_en_csv_v2_1629.csv"),
   "gdp_pc_ppp")
 life_exp <- read_wb(
-  here("Data", "life_expectancy", "API_SP.DYN.LE00.IN_DS2_en_csv_v2_1528.csv"),
+  here("data", "life_expectancy", "API_SP.DYN.LE00.IN_DS2_en_csv_v2_1528.csv"),
   "life_expectancy")
 road_deaths <- read_wb(
-  here("Data", "death_trafic_injury", "API_SH.STA.TRAF.P5_DS2_en_csv_v2_72972.csv"),
+  here("data", "death_trafic_injury", "API_SH.STA.TRAF.P5_DS2_en_csv_v2_72972.csv"),
   "road_deaths_100k")
 tobacco <- read_wb(
-  here("Data", "tobacco",
-       "API_SH.PRV.SMOK_DS2_en_csv_v2.csv"),
-  "tobacco"
+  here("data", "tobacco", "API_SH.PRV.SMOK_DS2_en_csv_v2.csv"),
+  "tobacco")
+education <- read_wb(
+  here("data", "education", "API_SE.TER.CUAT.BA.ZS_DS2_en_csv_v2_4882.csv"),
+  "education_ba")
 )
 ```
 
+VERIFIER POUR TOBACCO
 After cleaning, here is what each indicator covers:
 
 ```{r}
@@ -174,8 +183,7 @@ list(alcohol = alcohol, health_exp = health_exp, gdp = gdp,
   knitr::kable()
 ```
 
-
-# Tables 
+# Tables
 
 ```{r}
 data.frame(
@@ -189,8 +197,7 @@ data.frame(
   knitr::kable()
 ```
 
-# PLOT OF THE MAIN VARIABLE 
-
+# PLOT OF THE MAIN VARIABLE
 
 ```{r}
 library(ggplot2)
@@ -212,7 +219,7 @@ life_exp |>
   ) 
 ```
 
-More interesting : life expectancy according to out of pocket expenditure : 
+More interesting : life expectancy according to out of pocket expenditure :
 
 ```{r}
 #need to join the two datasets first 
@@ -233,4 +240,3 @@ ggplot(panel, aes(x = oop_share, y = life_expectancy)) +
   ) +
   theme_minimal()
 ```
-
