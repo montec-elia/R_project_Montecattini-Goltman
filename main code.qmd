@@ -41,27 +41,26 @@ The whole project (R project, raw data, Quarto source) is available on GitHub:
 
 <https://github.com/montec-elia/R_project_Montecattini-Goltman>
 
-# Data sources
+# Data
 
 ## Links and how to reproduce the data selection
 
 MOST files are downloaded from the World Bank Open Data portal. The World Bank only redistributes the health and behaviour indicators, which are produced by the WHO. To reproduce the selection (downlaod as csv files):
 
 | DATA | Producer | Indicator page | Local file |
-|------------------|------------------|------------------|------------------|
+|--------------------|-----------------|------------------|-----------------|
 | Out-of-pocket health expenditure (% of current health expenditure) | WHO GHED, via World Bank | <https://data.worldbank.org/indicator/SH.XPD.OOPC.CH.ZS?downloadformat=csv> | `data/out_of_pocket` |
 | Alcohol consumption per capita (litres of pure alcohol, 15+) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.ALC.PCAP.LI?downloadformat=csv> | `data/alcohol` |
-| Prevalence of current tobacco use (% adults) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.PRV.SMOK?downloadformat=csv> | `data/tobacco` |
+| Prevalence of current tobacco use (% adults) | WHO | XXX | `data/tobacco.csv` |
 | GDP per capita, PPP (constant international \$) | World Bank (ICP / WDI) | <https://data.worldbank.org/indicator/NY.GDP.PCAP.PP.KD?downloadformat=csv> | `data/gdp_ppp` |
 | Life expectancy at birth, total (years) | World Bank (WDI) | <https://data.worldbank.org/indicator/SP.DYN.LE00.IN?downloadformat=csv> | `data/life_expectancy` |
-| Mortality caused by road traffic injury (per 100.000 person) | World Health Organization (WHO) | <https://api.worldbank.org/v2/en/indicator/SH.STA.TRAF.P5?downloadformat=csv> | `data/mortality_car.csv` |
+| Mortality caused by road traffic injury (per 100.000 person) | WB | <https://data.worldbank.org/indicator/SH.STA.TRAF.P5?downloadformat=csv> | `data/mortality_car.csv` |
 | Educational attainment, at least Bachelor's or equivalent, population 25+, total (%) | UNESCO via World Bank | <https://data.worldbank.org/indicator/SE.TER.CUAT.BA.ZS?downloadformat=csv> | `data/education` |
 | Current Health Expenditure (% GDP) | WHO via World Bank | <https://data.worldbank.org/indicator/SH.XPD.CHEX.GD.ZS?downloadformat=csv> | `data/health_expenditure` |
 
-
 ## Short description of the sources and cleaning
 
-Our data come mainly from datasets of the World Health Organization (WHO) that are redistributed by the World Bank. The point of this part is mainly to make the dataset proper to a longitudinal analysis.
+Our data come mainly from datasets of the World Bank that are redistributed by the World Bank. The point of this part is mainly to make the dataset proper to a longitudinal analysis.
 
 ```{r}
 #|include: false
@@ -74,13 +73,20 @@ readLines("Data/health_expenditure/API_SH.XPD.CHEX.GD.ZS_DS2_en_csv_v2_73563.csv
 readLines("Data/gdp_ppp/API_NY.GDP.PCAP.PP.KD_DS2_en_csv_v2_1629.csv", n = 6)
 readLines("Data/life_expectancy/API_SP.DYN.LE00.IN_DS2_en_csv_v2_1528.csv", n = 6)
 readLines("Data/mortality_car/API_SH.STA.TRAF.P5_DS2_en_csv_v2_2491.csv", n = 6)
-
 ```
 
-## Most important variables /!!!!!!\\ à reprendre faut faire plus long
+The datas for tobacco are directly from the world health organization.
+
+```{r}
+#|include: false
+
+readLines("Data/tobacco.csv", n = 6)
+```
+
+## Most important variables
 
 | Variable | Description |
-|------------------------------------|------------------------------------|
+|-------------------|-----------------------------------------------------|
 | `country`, `iso3` | unique identification code of the country. They are the first key used to join the files. |
 | `year` | Calendar year of the observation. |
 | `life_exp` | Life expectancy at birth in years. |
@@ -88,12 +94,34 @@ readLines("Data/mortality_car/API_SH.STA.TRAF.P5_DS2_en_csv_v2_2491.csv", n = 6)
 | `alcohol` | Alcohol consumption per capita (litres of pure alcohol, population 15+, recorded and unrecorded). It's considered as a proxy for dangerous behaviors here.. |
 | `tobacco` | Prevalence of tobacco smoking. It's considered as a proxy for dangerous behaviors here. |
 | `gdp_pc` | GDP per capita in PPP, constant international dollars. Control variable for the level of wealth. |
-| `road_death`` | Mortality caused by road traffic injury is estimated road traffic fatal injury deaths per 100,000 population. It's considered as a proxy for dangerous behaviors here. |
+| `road_death` | Mortality caused by road traffic injury is estimated road traffic fatal injury deaths per 100,000 population. It's considered as a proxy for dangerous behaviors here. |
 
+### WHO tobacco file
+
+Tobacco data come from the WHO Global Health Observatory (indicator `M_Est_tob_curr_std`): estimated prevalence of **current tobacco use** (%), age-standardized. Estimates are given by country, year and sex, with confidence intervals. Where no tobacco use estimate exists for a country, the WHO substitutes tobacco smoking estimates (this is stated in the comments column). It's key to remeber that values after 2024 are projections.
+
+#### Cleaning steps for the WHO file
+
+1.  We keep only rows whose location type is `Country`.
+2.  We keep the estimates for both sexes, to get one row per country and year.
+3.  We keep four columns: country code, country name, year and the prevalence.
+
+```{r}
+#| label: tobacco-cleaning
+tobacco <- vroom(here("Data", "tobacco.csv"), show_col_types = FALSE) |>
+  filter(`Location type` == "Country", #step1
+         Dim1 == "Both sexes") |> #step2 
+  select(iso3 = SpatialDimValueCode, #step3
+         country = Location,
+         year = Period,
+         tobacco_use_pct = FactValueNumeric)
+```
 
 ### World Bank files (WDI)
 
 Five of our files come from the World Development Indicators (WDI) database of the World Bank. Each indicator was downloaded as a CSV from the World Bank Data website. The files for alcohol, GDP and life expectancy were last updated on 2026-10-08, the files for health expenditure and road mortality on 2026-11-11.
+
+- **Out-of-Pocket** [description à faire]
 
 - **Alcohol consumption** (`SH.ALC.PCAP.LI`): total alcohol consumption per capita, in litres of pure alcohol, for people aged 15 and over, adjusted of the tourist consumtion. These are **projected estimates** produced by the WHO, not direct national measurements.According to the file `Metadata_Country_API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878`, the world bank takes into account, when there are, the two exanges rates.
 
@@ -105,7 +133,7 @@ Five of our files come from the World Development Indicators (WDI) database of t
 
 - **Road traffic mortality** (`SH.STA.TRAF.P5`): deaths caused by road traffic injury, per 100,000 population.
 
-### Cleaning steps for the World Bank files
+#### Cleaning steps for the World Bank files
 
 All five files have the same structure, so one function cleans them all:
 
@@ -127,8 +155,8 @@ countries <- vroom(meta_file, show_col_types = FALSE) |>
 
 # to go faster, Claude created a function read_wb that  uses tidyr for cleaning the world bank databases 
 read_wb <- function(path, value_name) {
-  vroom(path, skip = 4, show_col_types = FALSE) |>
-    select(-starts_with("...")) |>
+  vroom(path, skip = 4, show_col_types = FALSE) |> #step1 
+    select(-starts_with("...")) |> #step2
     pivot_longer(
       cols = matches("^[0-9]{4}$"),
       names_to = "year",
@@ -160,29 +188,9 @@ life_exp <- read_wb(
 road_deaths <- read_wb(
   here("data", "mortality_car", "API_SH.STA.TRAF.P5_DS2_en_csv_v2_2491.csv"),
   "road_deaths_100k")
-tobacco <- read_wb(
-  here("data", "tobacco", "API_SH.PRV.SMOK_DS2_en_csv_v2.csv"),
-  "tobacco")
 education <- read_wb(
   here("data", "education", "API_SE.TER.CUAT.BA.ZS_DS2_en_csv_v2_4882.csv"),
   "education_ba")
-```
-
-VERIFIER POUR TOBACCO After cleaning, here is what each indicator covers:
-
-```{r}
-#| label: wb-coverage
-list(alcohol = alcohol, health_exp = health_exp, gdp = gdp,
-     life_exp = life_exp, road_deaths = road_deaths) |>
-  imap(\(d, name) tibble(
-    indicator    = name,
-    countries    = n_distinct(d$iso3),
-    first_year   = min(d$year),
-    last_year    = max(d$year),
-    observations = nrow(d)
-  )) |>
-  list_rbind() |>
-  knitr::kable()
 ```
 
 # Tables
@@ -196,7 +204,8 @@ info <- function(d) {
     Columns = ncol(d),
     Countries = n_distinct(d$iso3),
     First_year = min(d$year),
-    Last_year = max(d$year)
+    Last_year = max(d$year),
+    Variables = paste(names(d), collapse = ", ")
   ) |>
     knitr::kable()
 }
@@ -205,7 +214,7 @@ info <- function(d) {
 
 Then we call it :
 
-### alcohol
+### Alcohol
 
 ```{r}
 info(alcohol)
@@ -238,8 +247,22 @@ info(road_deaths)
 ### Public health expenditure
 
 ```{r}
-info(pub_health_exp)
+info(health_exp)
 ```
+
+### Tobacco
+
+```{r}
+info(tobacco)
+```
+
+
+### Education
+
+```{r}
+info(education)
+```
+
 
 # PLOT OF THE MAIN VARIABLE
 
