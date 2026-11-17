@@ -18,22 +18,24 @@ library(purrr)
 
 # Research question
 
-**To what extent does the reduction in households' direct out-of-pocket health expenditure influence individual health behaviours, and to what extent can it foster the emergence of moral hazard?**
+**To what extent does the reduction in households' direct out-of-pocket health expenditure influence individual health behaviors, and to what extent can it foster the emergence of moral hazard?**
 
 In most developed countries, health care is largely financed through public spending or collective insurance. The expected effect is positive: when access to care no longer depends on income, prevention, screening and treatment improve, and life expectancy rises. By contrast, countries where out-of-pocket spending (the share paid directly by the patient) is high experience more forgone care and greater health inequalities. A first part of our work is therefore to check whether a lower out-of-pocket share is associated with a higher life expectancy.
 
-Moral hazard is a key concept in health economics : it is defined as the phenomenon where individuals, when **insured against health care costs**, may engage in **riskier behavior** (*ex-ante* moral hazard) or **overconsume** health care resources (*ex-post* moral hazard) because they do not bear the full financial responsibility for those costs. This can lead to market inefficiency and an overallocation of health care services.
+Moral hazard is a key concept in health economics: it is defined as the phenomenon where individuals, when **insured against health care costs**, may engage in **riskier behavior** (*ex-ante* moral hazard) or **over-consume** health care resources (*ex-post* moral hazard) because they do not bear the full financial responsibility for those costs. This can lead to market inefficiency and an over-allocation of health care services.
 
 In this project, we’ll try to assess whether the concept of ex-ante moral hazard is a real and measurable phenomenon, or rather a theoretical risk whose magnitude remains limited compared with the benefits of a well-funded health system. */!if the project is not long enough, we’ll try to assess the concept of ex-post moral hazard as well.*
 
 We can state two working hypotheses:
 
-- **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
-- **H2.** A lower out-of-pocket share is associated with higher alcohol consumption and tobacco use (moral hazard), but the effect is small compared with the gain in life expectancy.
+-   **H1.** A lower out-of-pocket share is associated with a higher life expectancy, even after controlling for GDP per capita.
+-   **H2.** A lower out-of-pocket share is associated with riskier behavior, using alchohol and tobacco consumption and car accidents as a proxy (moral hazard), but the effect is small compared with the gain in life expectancy.
 
 Methodologically, we will carry out a longitudinal study. Since the studies are conducted at the country level and there are not enough countries in the world to reach 1000 units, we use data by year: each observation is a country in a given year. This gives a panel of several thousand observations and allows us to follow the same country over time, for instance with country fixed effects, to compare a country with itself rather than with very different countries.
 
-**LIMIT**The main limitation of the project is that we only have national averages. A relation observed between countries does not necessarily hold for individuals (ecological fallacy), so we cannot draw firm conclusions about individual behaviours. Our results will describe associations and not proven causal effects.
+**LIMIT:** The main limitation of the project is that we only have national averages. A relation observed between countries does not necessarily hold for individuals (ecological fallacy), so we cannot draw firm conclusions about individual behaviors. Our results will describe associations and not proven causal effects.
+
+Another limit is the use of alcohol, tobacco and car mortality as proxies for risky behaviors. Indeed, for examplen, a low consumption of tobacco in a country could be related to religious beliefs, and many other variables that we cannot control for. However, we will try to control for GDP and Education.
 
 # Project repository
 
@@ -45,10 +47,10 @@ The whole project (R project, raw data, Quarto source) is available on GitHub:
 
 ## Links and how to reproduce the data selection
 
-MOST files are downloaded from the World Bank Open Data portal. The World Bank only redistributes the health and behaviour indicators, which are produced by the WHO. To reproduce the selection (downlaod as csv files):
+Most files are downloaded from the World Bank Open Data portal. The World Bank only redistributes the health and behavior indicators, which are produced by the WHO. To reproduce the selection (downloaded as csv files):
 
 | DATA | Producer | Indicator page | Local file |
-|--------------------|-----------------|------------------|-----------------|
+|-------------------|------------------|------------------|------------------|
 | Out-of-pocket health expenditure (% of current health expenditure) | WHO GHED, via World Bank | <https://data.worldbank.org/indicator/SH.XPD.OOPC.CH.ZS?downloadformat=csv> | `data/out_of_pocket` |
 | Alcohol consumption per capita (litres of pure alcohol, 15+) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.ALC.PCAP.LI?downloadformat=csv> | `data/alcohol` |
 | Current tobacco use, tobacco smoking and cigarette smoking, age-standardized | WHO GHO | <https://www.who.int/data/gho/data/indicators/indicator-details/GHO/gho-tobacco-control-monitor-current-tobaccouse-tobaccosmoking-cigarrettesmoking-agestd-tobagestdcurr> | `data/tobacco.csv` |
@@ -63,7 +65,8 @@ MOST files are downloaded from the World Bank Open Data portal. The World Bank o
 Our data come mainly from datasets of the World Bank that are redistributed by the World Bank. The point of this part is mainly to make the dataset proper to a longitudinal analysis.
 
 ```{r}
-#|include: false
+#| echo: FALSE
+#| include: FALSE
 
 #usually, Word bank files contains 4 lines that are useless.
 # we can check it the following way 
@@ -73,32 +76,22 @@ readLines("Data/health_expenditure/API_SH.XPD.CHEX.GD.ZS_DS2_en_csv_v2_73563.csv
 readLines("Data/gdp_ppp/API_NY.GDP.PCAP.PP.KD_DS2_en_csv_v2_1629.csv", n = 6)
 readLines("Data/life_expectancy/API_SP.DYN.LE00.IN_DS2_en_csv_v2_1528.csv", n = 6)
 readLines("Data/mortality_car/API_SH.STA.TRAF.P5_DS2_en_csv_v2_2491.csv", n = 6)
+readLines("Data/education/API_SE.TER.CUAT.BA.ZS_DS2_en_csv_v2_4882.csv", n = 6)
+readLines("Data/out_of_pocket/API_SH.XPD.OOPC.CH.ZS_DS2_en_csv_v2_62345.csv", n = 6)
 ```
 
-The datas for tobacco are directly from the world health organization.
+The data for tobacco comes directly from the world health organization.
 
 ```{r}
-#|include: false
+#| echo: FALSE
+#| include: FALSE
 
 readLines("Data/tobacco.csv", n = 6)
 ```
 
-## Most important variables
-
-| Variable | Description |
-|-------------------|-----------------------------------------------------|
-| `country`, `iso3` | unique identification code of the country. They are the first key used to join the files. |
-| `year` | Calendar year of the observation. |
-| `life_exp` | Life expectancy at birth in years. |
-| `oop_share` | Out-of-pocket expenditure as a percentage of current health expenditure. High values mean a weak financial protection. Main explanatory variable. |
-| `alcohol` | Alcohol consumption per capita (litres of pure alcohol, population 15+, recorded and unrecorded). It's considered as a proxy for dangerous behaviors here.. |
-| `tobacco` | Prevalence of tobacco smoking. It's considered as a proxy for dangerous behaviors here. |
-| `gdp_pc` | GDP per capita in PPP, constant international dollars. Control variable for the level of wealth. |
-| `road_death` | Mortality caused by road traffic injury is estimated road traffic fatal injury deaths per 100,000 population. It's considered as a proxy for dangerous behaviors here. |
-
 ### WHO tobacco file
 
-Tobacco data come from the WHO Global Health Observatory (indicator `M_Est_tob_curr_std`): estimated prevalence of **current tobacco use** (%), age-standardized. Estimates are given by country, year and sex, with confidence intervals. Where no tobacco use estimate exists for a country, the WHO substitutes tobacco smoking estimates (this is stated in the comments column). It's key to remeber that values after 2024 are projections.
+Tobacco data come from the WHO Global Health Observatory (indicator `M_Est_tob_curr_std`): estimated prevalence of **current tobacco use** (%), age-standardized. Estimates are given by country, year and sex, with confidence intervals. Where no tobacco use estimate exists for a country, the WHO substitutes tobacco smoking estimates (this is stated in the comments column). It's key to remember that values after 2024 are projections.
 
 #### Cleaning steps for the WHO file
 
@@ -119,23 +112,25 @@ tobacco <- vroom(here("Data", "tobacco.csv"), show_col_types = FALSE) |>
 
 ### World Bank files (WDI)
 
-Five of our files come from the World Development Indicators (WDI) database of the World Bank. Each indicator was downloaded as a CSV from the World Bank Data website. The files for alcohol, GDP and life expectancy were last updated on 2026-10-08, the files for health expenditure and road mortality on 2026-11-11.
+Six of our files come from the World Development Indicators (WDI) database of the World Bank. Each indicator was downloaded as a CSV from the World Bank Data website. The files for alcohol, GDP, education and life expectancy were last updated on 2026-10-08, the files for health expenditure, out-of-pocket expenditure and road mortality on 2026-11-11.
 
-- **Out-of-Pocket** [description à faire]
+-   **Out-of-Pocket** (`SH.XPD.OOPC.CH.ZS`): domestic private health expenditure paid directly by households, as a percentage of current health expenditure. It includes direct payments made by individuals for healthcare goods and services, such as consultations, medicines and treatments, rather than payments covered by insurance or government schemes.
 
-- **Alcohol consumption** (`SH.ALC.PCAP.LI`): total alcohol consumption per capita, in litres of pure alcohol, for people aged 15 and over, adjusted of the tourist consumtion. These are **projected estimates** produced by the WHO, not direct national measurements.According to the file `Metadata_Country_API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878`, the world bank takes into account, when there are, the two exanges rates.
+-   **Alcohol consumption** (`SH.ALC.PCAP.LI`): total alcohol consumption per capita, in liters of pure alcohol, for people aged 15 and over, adjusted of the tourist consumption. These are **projected estimates** produced by the WHO, not direct national measurements. According to the file `Metadata_Country_API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878`, the world bank takes into account, when there are, the two exanges rates.
 
-- **Current Governmental health expenditure** (`SH.XPD.CHEX.GD.ZS`): total health spending as a percentage of GDP, from the WHO Global Health Expenditure Database.Estimates of current health expenditures include healthcare goods and services consumed during each year. This indicator **does not include capital** health expenditures such as buildings, machinery, IT and stocks of vaccines for emergency or outbreaks, according to the metadatas :
+-   **Current Governmental health expenditure** (`SH.XPD.CHEX.GD.ZS`): total health spending as a percentage of GDP, from the WHO Global Health Expenditure Database.Estimates of current health expenditures include healthcare goods and services consumed during each year. This indicator **does not include capital** health expenditures such as buildings, machinery, IT and stocks of vaccines for emergency or outbreaks, according to the metadatas :
 
-- **GDP per capita** (`NY.GDP.PCAP.PP.KD`): GDP per capita at **purchasing power parity**, in constant 2021 international dollars.
+-   **GDP per capita** (`NY.GDP.PCAP.PP.KD`): GDP per capita at **purchasing power parity**, in constant 2021 international dollars.
 
-- **Life expectancy** (`SP.DYN.LE00.IN`): life expectancy at birth, total, in years. It "indicates the number of years a newborn infant would live if prevailing patterns of mortality at the time of its birth were to stay the same throughout its life.", note: Derived from male and female life expectancy at birth from sources such as Eurostat: Demographic Statistics.,
+-   **Life expectancy** (`SP.DYN.LE00.IN`): life expectancy at birth, total, in years. It "indicates the number of years a newborn infant would live if prevailing patterns of mortality at the time of its birth were to stay the same throughout its life.", note: Derived from male and female life expectancy at birth from sources such as Eurostat: Demographic Statistics
 
-- **Road traffic mortality** (`SH.STA.TRAF.P5`): deaths caused by road traffic injury, per 100,000 population.
+-   **Road traffic mortality** (`SH.STA.TRAF.P5`): deaths caused by road traffic injury, per 100,000 population.
+
+-   **Education** (`SE.TER.CUAT.BA.ZS`): educational attainment, at least Bachelor's or equivalent, population 25+, total (%). It represents the percentage of the population aged 25 and over that has completed at least a Bachelor's degree or an equivalent level of education.
 
 #### Cleaning steps for the World Bank files
 
-All five files have the same structure, so one function cleans them all:
+All seven files have the same structure, so one function cleans them all:
 
 1.  The first 4 lines are a presentation header (source, update date), so we skip them.
 2.  Each line ends with an extra comma, which creates an empty unnamed column. We drop it.
@@ -195,7 +190,7 @@ education <- read_wb(
 
 # Tables
 
-For each of the variables, the function `info()` describes the main charachteristics of each file associated.
+For each of the variables, the function `info()` describes the main characteristics of each file associated.
 
 ```{r}
 info <- function(d) {
@@ -256,13 +251,11 @@ info(health_exp)
 info(tobacco)
 ```
 
-
 ### Education
 
 ```{r}
 info(education)
 ```
-
 
 # PLOT OF THE MAIN VARIABLE
 
@@ -304,6 +297,28 @@ ggplot(panel, aes(x = oop_share, y = life_expectancy)) +
     subtitle = "Relationship between health expenditure and life expectancy",
     x = "Out-of-pocket expenditure (% of current health expenditure)",
     y = "Life expectancy at birth (years)"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+#need to join the two datasets first 
+
+panel2 <- alcohol |>
+  left_join(out_pocket |> select(iso3, year, oop_share),
+            by = c("iso3", "year")) |>
+  drop_na(alcohol_litres, oop_share)
+
+library(ggplot2)
+
+ggplot(panel2, aes(x = oop_share, y = alcohol_litres)) +
+  geom_point(alpha=0.3) +
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  labs(
+    title = "Alcohol consumption according to out-of-pocket expenditure",
+    subtitle = "Relationship between out-of-pocket expenditure and alcohol consumption",
+    x = "Out-of-pocket expenditure (% of current health expenditure)",
+    y = "Alcohol consumtion (liters per year)"
   ) +
   theme_minimal()
 ```
