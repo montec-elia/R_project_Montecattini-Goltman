@@ -51,7 +51,7 @@ MOST files are downloaded from the World Bank Open Data portal. The World Bank o
 |--------------------|-----------------|------------------|-----------------|
 | Out-of-pocket health expenditure (% of current health expenditure) | WHO GHED, via World Bank | <https://data.worldbank.org/indicator/SH.XPD.OOPC.CH.ZS?downloadformat=csv> | `data/out_of_pocket` |
 | Alcohol consumption per capita (litres of pure alcohol, 15+) | WHO GHO, via World Bank | <https://data.worldbank.org/indicator/SH.ALC.PCAP.LI?downloadformat=csv> | `data/alcohol` |
-| Prevalence of current tobacco use (% adults) | WHO | XXX | `data/tobacco.csv` |
+| Current tobacco use, tobacco smoking and cigarette smoking, age-standardized | WHO GHO | <https://www.who.int/data/gho/data/indicators/indicator-details/GHO/gho-tobacco-control-monitor-current-tobaccouse-tobaccosmoking-cigarrettesmoking-agestd-tobagestdcurr> | `data/tobacco.csv` |
 | GDP per capita, PPP (constant international \$) | World Bank (ICP / WDI) | <https://data.worldbank.org/indicator/NY.GDP.PCAP.PP.KD?downloadformat=csv> | `data/gdp_ppp` |
 | Life expectancy at birth, total (years) | World Bank (WDI) | <https://data.worldbank.org/indicator/SP.DYN.LE00.IN?downloadformat=csv> | `data/life_expectancy` |
 | Mortality caused by road traffic injury (per 100.000 person) | WB | <https://data.worldbank.org/indicator/SH.STA.TRAF.P5?downloadformat=csv> | `data/mortality_car.csv` |
