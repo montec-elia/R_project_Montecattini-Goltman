@@ -6,7 +6,10 @@ format: html
 ---
 
 ```{r}
-# setup
+#| echo: FALSE
+#| include: FALSE
+#| label: "setup"
+
 library(knitr)
 library(dplyr)
 library(vroom)
@@ -140,6 +143,7 @@ All seven files have the same structure, so one function cleans them all:
 
 ```{r}
 #| label: wb-cleaning
+#| results: 'hide'
 
 # country metadata: aggregates have an empty Region
 meta_file <- list.files(here("data", "alcohol"),
@@ -165,6 +169,10 @@ read_wb <- function(path, value_name) {
            year, all_of(value_name))
 }
 
+```
+
+```{r}
+#| include: FALSE
 alcohol <- read_wb(
   here("data", "alcohol", "API_SH.ALC.PCAP.LI_DS2_en_csv_v2_3878.csv"),
   "alcohol_litres")
@@ -187,6 +195,7 @@ education <- read_wb(
   here("data", "education", "API_SE.TER.CUAT.BA.ZS_DS2_en_csv_v2_4882.csv"),
   "education_ba")
 ```
+
 
 # Tables
 
@@ -212,54 +221,63 @@ Then we call it :
 ### Alcohol
 
 ```{r}
+#| echo: FALSE
 info(alcohol)
 ```
 
 ### Health expenditure
 
 ```{r}
+#| echo: FALSE
 info(health_exp)
 ```
 
 ### Out-of-pocket expenses
 
 ```{r}
+#| echo: FALSE
 info(out_pocket)
 ```
 
 ### life expectancy
 
 ```{r}
+#| echo: FALSE
 info(life_exp)
 ```
 
 ### Deadly traffic incidents
 
 ```{r}
+#| echo: FALSE
 info(road_deaths)
 ```
 
 ### Public health expenditure
 
 ```{r}
+#| echo: FALSE
 info(health_exp)
 ```
 
 ### Tobacco
 
 ```{r}
+#| echo: FALSE
 info(tobacco)
 ```
 
 ### Education
 
 ```{r}
+#| echo: FALSE
 info(education)
 ```
 
 # PLOT OF THE MAIN VARIABLE
 
 ```{r}
+#| include: FALSE
 library(ggplot2)
 
 life_exp |>
@@ -282,6 +300,7 @@ life_exp |>
 More interesting : life expectancy according to out of pocket expenditure :
 
 ```{r}
+#| echo: FALSE
 #need to join the two datasets first 
 
 panel <- life_exp |>
@@ -302,6 +321,8 @@ ggplot(panel, aes(x = oop_share, y = life_expectancy)) +
 ```
 
 ```{r}
+#| echo: FALSE
+#| message: FALSE
 #need to join the two datasets first 
 
 panel2 <- alcohol |>
